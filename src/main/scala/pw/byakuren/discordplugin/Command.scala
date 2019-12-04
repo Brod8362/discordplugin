@@ -7,15 +7,16 @@ trait Command {
 
   def getName: String
 
-  final def run(executor: LinkUser, args: Array[String], context: Context): Unit = {
+  final def run(executor: LinkUser, args: Array[String], context: Context): Boolean = {
     context match {
-      case _:DiscordContext => discordExecute(executor, args, _)
-      case _:BukkitContext => bukkitExecute(executor, args, _)
+      case a:DiscordContext => discordExecute(executor, args, a)
+      case b:BukkitContext => bukkitExecute(executor, args, b)
+      case _ => false
     }
   }
 
-  def discordExecute(executor: LinkUser, args: Array[String], context:DiscordContext): Unit
+  def discordExecute(executor: LinkUser, args: Array[String], context:DiscordContext): Boolean
 
-  def bukkitExecute(executor: LinkUser, args: Array[String], context:BukkitContext): Unit
+  def bukkitExecute(executor: LinkUser, args: Array[String], context:BukkitContext): Boolean
 
 }

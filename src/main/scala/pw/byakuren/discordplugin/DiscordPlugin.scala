@@ -22,6 +22,7 @@ class DiscordPlugin extends JavaPlugin {
   override def onDisable(): Unit = {
     for (discord <- discordFuture) {
       discord.disable()
+      discord.shutdown()
     }
   }
 
@@ -44,15 +45,13 @@ class DiscordPlugin extends JavaPlugin {
   }
 
   override def onCommand(sender: CommandSender, cmd: command.Command, label: String, args: Array[String]): Boolean = {
-    if (!CommandRegistry.isCommand(cmd.getName)) false
+    val commandOption = CommandRegistry.getCommand(cmd.getName)
     sender match {
-      case player:Player => {
-        for (command <- CommandRegistry.getCommand(cmd.getName)) {
-          command.run(LinkUserFactory.fromUUID(player.getUniqueId), args, new BukkitContext(player))
-          true
+      case player:Player =>
+        commandOption match {
+          case a:Command => a.run(LinkUserFactory.fromUUID(player.getUniqueId), args, new BukkitContext(player))
+          case _ => false
         }
-        false
-      }
       case _ => false //this entity cannot run commands.
     }
   }

@@ -5,6 +5,7 @@ import java.util.logging.Logger
 
 import javax.security.auth.login.LoginException
 import net.dv8tion.jda.api.entities.{Message, TextChannel}
+import net.dv8tion.jda.api.events.ReadyEvent
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
 import net.dv8tion.jda.api.{EmbedBuilder, JDA, JDABuilder}
@@ -13,7 +14,9 @@ import org.bukkit.configuration.file.FileConfiguration
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.player.{AsyncPlayerChatEvent, PlayerLoginEvent, PlayerQuitEvent}
 import org.bukkit.event.{EventHandler, Listener}
-import scala.collection.StringOps
+import pw.byakuren.discordplugin.commands.TestCommand
+import pw.byakuren.discordplugin.contexts.DiscordContext
+import pw.byakuren.discordplugin.link.LinkUserFactory
 
 class DiscordConnection(config: FileConfiguration, logger: Logger) extends ListenerAdapter with Listener {
 
@@ -30,10 +33,9 @@ class DiscordConnection(config: FileConfiguration, logger: Logger) extends Liste
     try {
       new JDABuilder(config.getString("token")).addEventListeners(this).build()
     } catch {
-      case _: LoginException => {
+      case _: LoginException =>
         logger.warning("Failed to load discord - Invalid bot token")
         throw new RuntimeException("Failed to load DiscordPlugin - invalid token")
-      }
     }
   }
 
@@ -68,19 +70,31 @@ class DiscordConnection(config: FileConfiguration, logger: Logger) extends Liste
   /* Discord Listener Events */
   override def onGuildMessageReceived(event: GuildMessageReceivedEvent): Unit = {
     val msg = event.getMessage
-    if (msg.getChannel.getId != CHANNEL_ID || msg.getAuthor.getIdLong==SELF_USER_ID) return
+    if (msg.getChannel.getId != CHANNEL_ID || msg.getAuthor.isBot) return
     if (msg.getContentRaw.startsWith(prefix)) {
-      logger.info("Discord command detected")
-      executeCommand(msg.getContentRaw)
+      executeCommand(msg)
       return
     }
     sendMessageToBukkit(msg)
   }
 
+  override def onReady(event: ReadyEvent): Unit = {
+    CommandRegistry.register(TestCommand)
+    logger.info(s"Loaded ${CommandRegistry.size} commands.")
+  }
+
   /* Discord-Specific Events */
 
-  def executeCommand(msg: String): Unit = {
-    //todo convert stuff into stuff
+  def executeCommand(msg: Message): Unit = {
+    val argsWithCommand: Array[String] = msg.getContentRaw.substring(prefix.length).split(" ")
+    val parsed = argsWithCommand{0}
+    val cmdOption = CommandRegistry.getCmd(parsed)
+    cmdOption match {
+      case Some(cmd) => cmd.run(LinkUserFactory.fromMember(msg.getMember),
+        argsWithCommand.slice(1, argsWithCommand.length),
+        new DiscordContext(msg.getMember, msg.getTextChannel, msg))
+      case None => msg.getChannel.sendMessage(s"Command `$parsed` not found").queue()
+    }
   }
 
   /* Bukkit Listener Events */
@@ -108,5 +122,7 @@ class DiscordConnection(config: FileConfiguration, logger: Logger) extends Liste
   /* Plugin handling methods */
   def enable(): Unit = enabled = true
   def disable(): Unit = enabled = false
+
+  def shutdown(): Unit = jda.shutdown()
 
 }

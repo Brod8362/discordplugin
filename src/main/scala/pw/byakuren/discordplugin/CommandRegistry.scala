@@ -14,8 +14,13 @@ object CommandRegistry {
     c.foreach(register)
   }
 
+  def size: Int = commands.size
+
   def isCommand(n: String): Boolean = commands contains n
 
   def getCommand(n: String): Option[Command] = commands.get(n)
+
+  @Deprecated
+  def getCmd(n: String): Option[Command] = commands.values.toList.find{_.getName==n}
 
 }

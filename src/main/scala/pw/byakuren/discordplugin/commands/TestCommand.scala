@@ -10,11 +10,14 @@ object TestCommand extends Command {
 
   override def getName: String = "test"
 
-  override def discordExecute(executor: LinkUser, args: Array[String], context: DiscordContext): Unit = {
+  override def discordExecute(executor: LinkUser, args: Array[String], context: DiscordContext): Boolean = {
     context.channel.sendMessage("Test command!").queue()
+    true
   }
 
-  override def bukkitExecute(executor: LinkUser, args: Array[String], context: BukkitContext): Unit = {
-    context.player.sendMessage("Test command!")
+  override def bukkitExecute(executor: LinkUser, args: Array[String], context: BukkitContext): Boolean = {
+    context.player.getServer.broadcastMessage("Test Command!")
+    context.player.sendMessage("Test command private!")
+    true
   }
 }
