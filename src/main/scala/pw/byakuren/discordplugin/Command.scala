@@ -1,22 +1,20 @@
 package pw.byakuren.discordplugin
 
+import pw.byakuren.discordplugin.link.LinkUser
+
 trait Command {
 
   def getName: String
 
-  final def run(executor: String, args: Array[String], context: Context): Unit = {
+  final def run(executor: LinkUser, args: Array[String], context: Context): Unit = {
     context match {
       case DiscordContext => { discordExecute(executor, args)}
       case BukkitContext => {}
     }
   }
 
-  def discordExecute(executor:String, args: Array[String]): Unit = {
+  def discordExecute(executor: LinkUser, args: Array[String]): Unit
 
-  }
-
-  def bukkitExecute(executor:String, args: Array[String]): Unit = {
-
-  }
+  def bukkitExecute(executor: LinkUser, args: Array[String]): Unit
 
 }
