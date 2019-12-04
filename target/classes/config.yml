@@ -1,0 +1,7 @@
+token: "your token here"
+guild: "-1"
+channel: "-1"
+report-deaths: true
+report-connect: true
+report-disconnect: true
+bot-prefix: "!"
