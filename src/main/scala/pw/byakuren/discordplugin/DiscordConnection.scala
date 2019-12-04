@@ -13,6 +13,7 @@ import org.bukkit.configuration.file.FileConfiguration
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.player.{AsyncPlayerChatEvent, PlayerLoginEvent, PlayerQuitEvent}
 import org.bukkit.event.{EventHandler, Listener}
+import scala.collection.StringOps
 
 class DiscordConnection(config: FileConfiguration, logger: Logger) extends ListenerAdapter with Listener {
 
@@ -27,7 +28,7 @@ class DiscordConnection(config: FileConfiguration, logger: Logger) extends Liste
 
   def init() : JDA = {
     try {
-      new JDABuilder(config.getString("token")).build()
+      new JDABuilder(config.getString("token")).addEventListeners(this).build()
     } catch {
       case _: LoginException => {
         logger.warning("Failed to load discord - Invalid bot token")
@@ -47,13 +48,13 @@ class DiscordConnection(config: FileConfiguration, logger: Logger) extends Liste
   }
 
   def sendMessageToBukkit(msg: Message) : Unit = {
-    sendMessageToBukkit(f"{${msg.getAuthor.getName}} ${msg.getContentRaw}")
+    sendMessageToBukkit(s"{${msg.getAuthor.getName}} ${msg.getContentRaw}")
   }
 
   def alertUserConnectionChange(usr: String, joined: Boolean) : Unit = {
     val eb = new EmbedBuilder
     eb.setColor(Color.YELLOW)
-    eb.setTitle(f"$usr ${if (joined) "joined" else "left"} the game")
+    eb.setTitle(s"$usr ${if (joined) "joined" else "left"} the game")
     channel.sendMessage(eb.build()).queue()
   }
 
@@ -68,7 +69,8 @@ class DiscordConnection(config: FileConfiguration, logger: Logger) extends Liste
   override def onGuildMessageReceived(event: GuildMessageReceivedEvent): Unit = {
     val msg = event.getMessage
     if (msg.getChannel.getId != CHANNEL_ID || msg.getAuthor.getIdLong==SELF_USER_ID) return
-    if (msg.getContentRaw.startsWith(prefix+" ")) {
+    if (msg.getContentRaw.startsWith(prefix)) {
+      logger.info("Discord command detected")
       executeCommand(msg.getContentRaw)
       return
     }
@@ -95,7 +97,7 @@ class DiscordConnection(config: FileConfiguration, logger: Logger) extends Liste
 
   @EventHandler
   def onMessage(event: AsyncPlayerChatEvent): Unit = {
-    sendMessageToDiscord(f"<${event.getPlayer.getName}> ${event.getMessage}")
+    sendMessageToDiscord(s"<${event.getPlayer.getName}> ${event.getMessage}")
   }
 
   @EventHandler
