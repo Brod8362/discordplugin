@@ -16,5 +16,6 @@ object CommandRegistry {
 
   def isCommand(n: String): Boolean = commands contains n
 
+  def getCommand(n: String): Option[Command] = commands.get(n)
 
 }
