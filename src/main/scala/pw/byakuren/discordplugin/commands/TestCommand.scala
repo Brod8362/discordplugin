@@ -6,8 +6,6 @@ import pw.byakuren.discordplugin.link.{LinkUser, LinkUserFactory}
 
 object TestCommand extends Command {
 
-  CommandRegistry.register(this)
-
   override def getName: String = "test"
 
   override def discordExecute(executor: LinkUser, args: Array[String], context: DiscordContext): Boolean = {
@@ -16,8 +14,7 @@ object TestCommand extends Command {
   }
 
   override def bukkitExecute(executor: LinkUser, args: Array[String], context: BukkitContext): Boolean = {
-    context.player.getServer.broadcastMessage("Test Command!")
-    context.player.sendMessage("Test command private!")
+    context.player.sendMessage("Test command!")
     true
   }
 }

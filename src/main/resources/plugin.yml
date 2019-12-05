@@ -6,3 +6,6 @@ version: "1.0"
 commands:
   test:
     description: "Testing command"
+
+  link:
+    description: "Used to link your minecraft account and your discord account."

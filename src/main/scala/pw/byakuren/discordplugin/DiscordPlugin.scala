@@ -25,6 +25,7 @@ class DiscordPlugin extends JavaPlugin {
   }
 
   override def onDisable(): Unit = {
+    saveConfig()
     for (discord <- discordFuture) {
       discord.disable()
       discord.shutdown()
@@ -53,7 +54,7 @@ class DiscordPlugin extends JavaPlugin {
     sender match {
       case player:Player =>
         for (command <- commandOption) {
-          command.run(LinkUserFactory.fromUUID(player.getUniqueId), args, new BukkitContext(player))
+          command.run(LinkUserFactory.fromUUID(player.getUniqueId), args, new BukkitContext(player, getConfig))
         }
     }
     super.onCommand(sender, cmd, label, args)
