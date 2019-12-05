@@ -1,22 +1,27 @@
 package pw.byakuren.discordplugin
 
-import org.bukkit.{Bukkit, command}
+import org.bukkit.command
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import org.bukkit.plugin.java.JavaPlugin
 import pw.byakuren.discordplugin.contexts.BukkitContext
 import pw.byakuren.discordplugin.link.LinkUserFactory
 
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{Future,blocking}
 
 class DiscordPlugin extends JavaPlugin {
 
   saveDefaultConfig()
-  private lazy val discordFuture = Future { new DiscordConnection(getConfig, getLogger) }
-
+  private val discordFuture = Future {
+    blocking {
+      val t = new DiscordConnection(this, getConfig, getLogger)
+      t
+    }
+  }
 
   override def onLoad(): Unit = {
+    loadConfig()
   }
 
   override def onDisable(): Unit = {
@@ -29,7 +34,6 @@ class DiscordPlugin extends JavaPlugin {
   override def onEnable(): Unit = {
     for (discord <- discordFuture) {
       discord.enable()
-      getServer.getPluginManager.registerEvents(discord, this)
     }
   }
 
@@ -48,12 +52,11 @@ class DiscordPlugin extends JavaPlugin {
     val commandOption = CommandRegistry.getCommand(cmd.getName)
     sender match {
       case player:Player =>
-        commandOption match {
-          case a:Command => a.run(LinkUserFactory.fromUUID(player.getUniqueId), args, new BukkitContext(player))
-          case _ => false
+        for (command <- commandOption) {
+          command.run(LinkUserFactory.fromUUID(player.getUniqueId), args, new BukkitContext(player))
         }
-      case _ => false //this entity cannot run commands.
     }
+    super.onCommand(sender, cmd, label, args)
   }
 
 }

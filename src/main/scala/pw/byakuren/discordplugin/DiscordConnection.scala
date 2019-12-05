@@ -14,11 +14,12 @@ import org.bukkit.configuration.file.FileConfiguration
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.player.{AsyncPlayerChatEvent, PlayerLoginEvent, PlayerQuitEvent}
 import org.bukkit.event.{EventHandler, Listener}
+import org.bukkit.plugin.java.JavaPlugin
 import pw.byakuren.discordplugin.commands.TestCommand
 import pw.byakuren.discordplugin.contexts.DiscordContext
 import pw.byakuren.discordplugin.link.LinkUserFactory
 
-class DiscordConnection(config: FileConfiguration, logger: Logger) extends ListenerAdapter with Listener {
+class DiscordConnection(plugin: JavaPlugin, config: FileConfiguration, logger: Logger) extends ListenerAdapter with Listener {
 
   var enabled = true
 
@@ -26,11 +27,13 @@ class DiscordConnection(config: FileConfiguration, logger: Logger) extends Liste
 
   val CHANNEL_ID:String = config.getString("channel")
   val prefix:String = config.getString("bot-prefix")
+  jda.awaitReady()
   val SELF_USER_ID:Long = jda.getSelfUser.getIdLong
-  val channel:TextChannel = jda.getTextChannelById(CHANNEL_ID)
+  var channel:TextChannel = jda.getTextChannelById(CHANNEL_ID)
 
   def init() : JDA = {
     try {
+      Bukkit.getServer.getPluginManager.registerEvents(this, plugin)
       new JDABuilder(config.getString("token")).addEventListeners(this).build()
     } catch {
       case _: LoginException =>
@@ -41,12 +44,13 @@ class DiscordConnection(config: FileConfiguration, logger: Logger) extends Liste
 
   def sendMessageToDiscord(str: String) : Unit = {
     if (enabled)
-    channel.sendMessage(str).queue()
+        channel.sendMessage(str).queue()
+
   }
 
   def sendMessageToBukkit(str: String) : Unit = {
     if (enabled)
-    Bukkit.broadcastMessage(str)
+      Bukkit.broadcastMessage(str)
   }
 
   def sendMessageToBukkit(msg: Message) : Unit = {
