@@ -6,7 +6,7 @@ import org.bukkit.{Bukkit, ChatColor}
 import org.bukkit.entity.Player
 import pw.byakuren.discordplugin.Command
 import pw.byakuren.discordplugin.contexts.{BukkitContext, DiscordContext}
-import pw.byakuren.discordplugin.link.{LinkUser, PendingLink}
+import pw.byakuren.discordplugin.link.{LinkUser, LinkUserFactory, PendingLink}
 
 import scala.collection.mutable
 
@@ -25,6 +25,11 @@ object LinkCommand extends Command {
     val players: Array[Player] = Bukkit.getOnlinePlayers.toArray(Array[Player]())
 
     for (p <- players.find{_.getName==name}) {
+      if (LinkUserFactory.exists(context.author)) {
+        context.channel.sendMessage("Link already exists!").queue()
+        return false
+      }
+
       val link = new PendingLink(p.getUniqueId, context.author)
       p.sendMessage(s"To complete the link, run /link ${link.hashCode().toHexString}")
       pending.add(link)

@@ -9,3 +9,6 @@ commands:
 
   link:
     description: "Used to link your minecraft account and your discord account."
+
+  channel:
+    description: "Used to choose the channel the bot is paired with. Requires restart."

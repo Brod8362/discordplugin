@@ -16,7 +16,6 @@ object LinkUserFactory {
     if (exists(uuid)) {
       registered.find { _.getUUID == uuid }
     }
-    //todo init link process
     new LinkUser(uuid, null)
   }
 
@@ -24,21 +23,14 @@ object LinkUserFactory {
     if (exists(mem)) {
       registered.find { _.getMember.getId == mem.getId }
     }
-    //todo init link process
     new LinkUser(null, mem)
   }
 
-  private def exists(uuid: UUID): Boolean = registered.map(_.getUUID) contains uuid
+  def exists(uuid: UUID): Boolean = registered.map(_.getUUID) contains uuid
 
-  private def exists(mem: Member): Boolean = registered.map(_.getMember.getId) contains mem.getId
+  def exists(mem: Member): Boolean = registered.map(_.getMember.getId) contains mem.getId
 
+  def add(u: LinkUser): Unit = registered.add(u)
 
-  def getPair(config: FileConfiguration, uuid: String): (String, String) = {
-    ("","")
-  }
-
-  def addPair(config: FileConfiguration, data:(String, String)): Unit = {
-    ("","")
-  }
 
 }
