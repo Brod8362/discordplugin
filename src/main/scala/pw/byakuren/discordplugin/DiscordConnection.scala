@@ -15,7 +15,7 @@ import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.player.{AsyncPlayerChatEvent, PlayerLoginEvent, PlayerQuitEvent}
 import org.bukkit.event.{EventHandler, Listener}
 import org.bukkit.plugin.java.JavaPlugin
-import pw.byakuren.discordplugin.commands.{LinkCommand, TestCommand}
+import pw.byakuren.discordplugin.commands.{ChannelCommand, LinkCommand, TestCommand}
 import pw.byakuren.discordplugin.contexts.DiscordContext
 import pw.byakuren.discordplugin.link.LinkUserFactory
 
@@ -45,7 +45,6 @@ class DiscordConnection(plugin: JavaPlugin, config: FileConfiguration, logger: L
   def sendMessageToDiscord(str: String) : Unit = {
     if (enabled)
         channel.sendMessage(str).queue()
-
   }
 
   def sendMessageToBukkit(str: String) : Unit = {
@@ -83,8 +82,9 @@ class DiscordConnection(plugin: JavaPlugin, config: FileConfiguration, logger: L
   }
 
   override def onReady(event: ReadyEvent): Unit = {
-    CommandRegistry.register(TestCommand)
-    CommandRegistry.register(LinkCommand)
+    CommandRegistry register TestCommand
+    CommandRegistry register LinkCommand
+    CommandRegistry register ChannelCommand
     logger.info(s"Loaded ${CommandRegistry.size} commands.")
   }
 
@@ -97,7 +97,7 @@ class DiscordConnection(plugin: JavaPlugin, config: FileConfiguration, logger: L
     cmdOption match {
       case Some(cmd) => cmd.run(LinkUserFactory.fromMember(msg.getMember),
         argsWithCommand.slice(1, argsWithCommand.length),
-        new DiscordContext(msg.getMember, msg.getTextChannel, msg))
+        new DiscordContext(msg.getMember, msg.getTextChannel, msg, config))
       case None => msg.getChannel.sendMessage(s"Command `$parsed` not found").queue()
     }
   }

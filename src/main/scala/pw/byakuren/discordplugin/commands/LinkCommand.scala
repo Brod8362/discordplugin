@@ -7,6 +7,7 @@ import org.bukkit.entity.Player
 import pw.byakuren.discordplugin.Command
 import pw.byakuren.discordplugin.contexts.{BukkitContext, DiscordContext}
 import pw.byakuren.discordplugin.link.{LinkUser, LinkUserFactory, PendingLink}
+import pw.byakuren.discordplugin.util.Utility._
 
 import scala.collection.mutable
 
@@ -49,15 +50,15 @@ object LinkCommand extends Command {
     linkOption match {
       case Some(p) =>
         if (p.uuid != context.player.getUniqueId) {
-          context.player.sendMessage(ChatColor.RED+"That isn't for you!")
+          context.player.errorMessage("That isn't for you!")
           return false
         }
         pending.remove(p)
         p.complete(context.config)
-        context.player.sendMessage(ChatColor.GREEN+"Link completed!")
+        context.player.successMessage("Link completed!")
         true
       case None => {
-        context.player.sendMessage("There is no pending link!")
+        context.player.errorMessage("There is no pending link!")
         false
       }
     }
