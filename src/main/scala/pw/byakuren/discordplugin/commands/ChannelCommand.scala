@@ -11,7 +11,7 @@ object ChannelCommand extends Command {
 
   override def getName: String = "channel"
 
-  override def discordExecute(executor: LinkUser, args: Array[String], context: DiscordContext): Boolean = {
+  override def discordExecute(executor: Option[LinkUser], args: Array[String], context: DiscordContext): Boolean = {
     context.msg.getMentionedChannels.asScala.headOption match {
       case Some(a) =>
         context.config.set("channel", a.getId)
@@ -23,8 +23,13 @@ object ChannelCommand extends Command {
     }
   }
 
-  override def bukkitExecute(executor: LinkUser, args: Array[String], context: BukkitContext): Boolean = {
-    val jda = executor.getMember.getJDA
+  override def bukkitExecute(executor: Option[LinkUser], args: Array[String], context: BukkitContext): Boolean = {
+    val jda = executor match {
+      case Some(lu) => lu.getMember.getJDA
+      case None =>
+        context.player.errorMessage("You need to link your discord account to use this command.")
+        return false
+    }
 
     val result = for {
       channelId <- args.headOption.toRight("No channel provided")

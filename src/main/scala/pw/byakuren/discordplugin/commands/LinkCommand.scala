@@ -17,7 +17,7 @@ object LinkCommand extends Command {
 
   override def getName: String = "link"
 
-  override def discordExecute(executor: LinkUser, args: Array[String], context: DiscordContext): Boolean = {
+  override def discordExecute(executor: Option[LinkUser], args: Array[String], context: DiscordContext): Boolean = {
     if (args.length != 1) {
       context.channel.sendMessage("Minecraft username not provided!").queue()
       return false
@@ -41,7 +41,7 @@ object LinkCommand extends Command {
     false
   }
 
-  override def bukkitExecute(executor: LinkUser, args: Array[String], context: BukkitContext): Boolean = {
+  override def bukkitExecute(executor: Option[LinkUser], args: Array[String], context: BukkitContext): Boolean = {
     if (args.length != 1) {
       return false
     }

@@ -12,19 +12,11 @@ object LinkUserFactory {
   private val path = "pairs"
   private def registered = mutable.HashSet[LinkUser]()
 
-  def fromUUID(uuid: UUID): LinkUser = {
-    if (exists(uuid)) {
-      registered.find { _.getUUID == uuid }
-    }
-    new LinkUser(uuid, null)
+  def fromUUID(uuid: UUID): Option[LinkUser] = {
+    registered.find { _.getUUID == uuid }
   }
 
-  def fromMember(mem: Member): LinkUser = {
-    if (exists(mem)) {
-      registered.find { _.getMember.getId == mem.getId }
-    }
-    new LinkUser(null, mem)
-  }
+  def fromMember(mem: Member): Option[LinkUser] = registered.find { _.getMember.getId == mem.getId }
 
   def exists(uuid: UUID): Boolean = registered.map(_.getUUID) contains uuid
 
