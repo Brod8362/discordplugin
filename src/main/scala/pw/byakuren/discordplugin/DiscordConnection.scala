@@ -4,7 +4,7 @@ import java.awt.Color
 import java.util.logging.Logger
 
 import javax.security.auth.login.LoginException
-import net.dv8tion.jda.api.entities.{Message, TextChannel}
+import net.dv8tion.jda.api.entities.{Member, Message, TextChannel}
 import net.dv8tion.jda.api.events.ReadyEvent
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
@@ -18,6 +18,7 @@ import org.bukkit.{Bukkit, ChatColor}
 import pw.byakuren.discordplugin.commands.{ChannelCommand, LinkCommand, TestCommand}
 import pw.byakuren.discordplugin.contexts.DiscordContext
 import pw.byakuren.discordplugin.link.LinkUserFactory
+import scala.collection.JavaConverters._
 
 class DiscordConnection(plugin: JavaPlugin, config: FileConfiguration, logger: Logger) extends ListenerAdapter with Listener {
 
@@ -49,13 +50,13 @@ class DiscordConnection(plugin: JavaPlugin, config: FileConfiguration, logger: L
 
   def sendMessageToBukkit(name: String, msg: String, img_count: Int) : Unit = {
     if (enabled) {
-      val img_str = if (img_count > 0) s"${ChatColor.DARK_PURPLE}[File${if (img_count==1) "" else s"×${img_count}"}] dw${ChatColor.RESET}" else ""
+      val img_str = if (img_count > 0) s"${ChatColor.DARK_PURPLE}[File${if (img_count==1) "" else s"×${img_count}"}] ${ChatColor.RESET}" else ""
       Bukkit.broadcastMessage(s"{$name} $img_str$msg")
     }
   }
 
   def sendMessageToBukkit(msg: Message) : Unit = {
-    sendMessageToBukkit(msg.getAuthor.getName, msg.getContentDisplay, msg.getAttachments.size())
+    sendMessageToBukkit(msg.getAuthor.getName, pingHighlight(msg), msg.getAttachments.size())
   }
 
   def alertUserConnectionChange(usr: String, joined: Boolean) : Unit = {
@@ -131,5 +132,16 @@ class DiscordConnection(plugin: JavaPlugin, config: FileConfiguration, logger: L
   def disable(): Unit = enabled = false
 
   def shutdown(): Unit = jda.shutdownNow()
+
+  /* Utility methods */
+  def pingHighlight(m: Message): String = {
+    var f = m.getContentDisplay
+    for (u <- m.getMentionedMembers.asScala) {
+      println("x")
+      f = f.replace(s"@${u.getEffectiveName}",
+        s"${ChatColor.BLUE}@${u.getUser.getName}${ChatColor.RESET}")
+    }
+    f
+  }
 
 }
