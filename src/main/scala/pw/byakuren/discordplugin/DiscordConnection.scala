@@ -4,8 +4,9 @@ import java.awt.Color
 import java.util.logging.Logger
 
 import javax.security.auth.login.LoginException
-import net.dv8tion.jda.api.entities.{Member, Message, TextChannel}
+import net.dv8tion.jda.api.entities.{Member, Message, TextChannel, VoiceChannel}
 import net.dv8tion.jda.api.events.ReadyEvent
+import net.dv8tion.jda.api.events.guild.voice.{GuildVoiceJoinEvent, GuildVoiceLeaveEvent, GuildVoiceMoveEvent}
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
 import net.dv8tion.jda.api.{EmbedBuilder, JDA, JDABuilder}
@@ -18,6 +19,7 @@ import org.bukkit.{Bukkit, ChatColor}
 import pw.byakuren.discordplugin.commands.{ChannelCommand, LinkCommand, TestCommand}
 import pw.byakuren.discordplugin.contexts.DiscordContext
 import pw.byakuren.discordplugin.link.LinkUserFactory
+
 import scala.collection.JavaConverters._
 
 class DiscordConnection(plugin: JavaPlugin, config: FileConfiguration, logger: Logger) extends ListenerAdapter with Listener {
@@ -73,6 +75,11 @@ class DiscordConnection(plugin: JavaPlugin, config: FileConfiguration, logger: L
     channel.sendMessage(eb.build()).queue()
   }
 
+  def alertVCUpdate(user: Member, channel: VoiceChannel, joined: Boolean): Unit = {
+    Bukkit.broadcastMessage(s"${ChatColor.GRAY}${ChatColor.ITALIC}" +
+      s"${user.getUser.getName} ${if (joined) "joined" else "left"} voice channel #${channel.getName}")
+  }
+
   /* Discord Listener Events */
   override def onGuildMessageReceived(event: GuildMessageReceivedEvent): Unit = {
     val msg = event.getMessage
@@ -82,6 +89,15 @@ class DiscordConnection(plugin: JavaPlugin, config: FileConfiguration, logger: L
       return
     }
     sendMessageToBukkit(msg)
+  }
+
+
+  override def onGuildVoiceJoin(event: GuildVoiceJoinEvent): Unit = {
+    alertVCUpdate(event.getMember, event.getChannelJoined, joined = true)
+  }
+
+  override def onGuildVoiceLeave(event: GuildVoiceLeaveEvent): Unit = {
+    alertVCUpdate(event.getMember, event.getChannelLeft, joined = false)
   }
 
   override def onReady(event: ReadyEvent): Unit = {
