@@ -37,7 +37,7 @@ class DiscordConnection(plugin: JavaPlugin, config: FileConfiguration, logger: L
   def init() : JDA = {
     try {
       Bukkit.getServer.getPluginManager.registerEvents(this, plugin)
-      new JDABuilder(config.getString("token")).addEventListeners(this).build()
+      JDABuilder.createDefault(config.getString("token")).addEventListeners(this).build()
     } catch {
       case _: LoginException =>
         logger.warning("Failed to load discord - Invalid bot token")
