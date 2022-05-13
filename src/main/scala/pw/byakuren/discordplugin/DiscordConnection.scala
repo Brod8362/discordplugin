@@ -149,6 +149,15 @@ class DiscordConnection(plugin: JavaPlugin, config: FileConfiguration, logger: L
   @EventHandler
   def onMessage(event: AsyncPlayerChatEvent): Unit = {
     sendMessageToDiscord(s"<${event.getPlayer.getName}> ${event.getMessage}")
+    val regex = "<@\\d{17,18}>".r
+    var content = event.getMessage
+    val matches = regex.findAllIn(content)
+    for (found <- matches) {
+      for (id <- found.substring(2, found.length-1).toLongOption; user <- Option(jda.getUserById(id))) {
+          content = content.replaceAll(found, s"${ChatColor.BLUE}@${user.getName}${ChatColor.RESET}")
+      }
+    }
+    event.setMessage(content)
   }
 
   @EventHandler
