@@ -1,13 +1,9 @@
 package pw.byakuren.discordplugin
 
-import java.awt.Color
-import java.util.logging.Logger
-
-import javax.security.auth.login.LoginException
-import net.dv8tion.jda.api.entities.{Member, Message, TextChannel, VoiceChannel}
+import net.dv8tion.jda.api.entities._
 import net.dv8tion.jda.api.events.ReadyEvent
-import net.dv8tion.jda.api.events.guild.voice.{GuildVoiceJoinEvent, GuildVoiceLeaveEvent, GuildVoiceMoveEvent}
-import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent
+import net.dv8tion.jda.api.events.guild.voice.{GuildVoiceJoinEvent, GuildVoiceLeaveEvent}
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
 import net.dv8tion.jda.api.{EmbedBuilder, JDA, JDABuilder}
 import org.bukkit.configuration.file.FileConfiguration
@@ -20,7 +16,10 @@ import pw.byakuren.discordplugin.commands.{ChannelCommand, LinkCommand, TestComm
 import pw.byakuren.discordplugin.contexts.DiscordContext
 import pw.byakuren.discordplugin.link.LinkUserFactory
 
-import scala.collection.JavaConverters._
+import java.awt.Color
+import java.util.logging.Logger
+import javax.security.auth.login.LoginException
+import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 class DiscordConnection(plugin: JavaPlugin, config: FileConfiguration, logger: Logger) extends ListenerAdapter with Listener {
 
@@ -52,7 +51,7 @@ class DiscordConnection(plugin: JavaPlugin, config: FileConfiguration, logger: L
 
   def sendMessageToBukkit(name: String, msg: String, img_count: Int) : Unit = {
     if (enabled) {
-      val img_str = if (img_count > 0) s"${ChatColor.DARK_PURPLE}[File${if (img_count==1) "" else s"×${img_count}"}] ${ChatColor.RESET}" else ""
+      val img_str = if (img_count > 0) s"${ChatColor.DARK_PURPLE}[File${if (img_count==1) "" else s"×$img_count"}] ${ChatColor.RESET}" else ""
       Bukkit.broadcastMessage(s"{$name} $img_str$msg")
     }
   }
@@ -65,32 +64,36 @@ class DiscordConnection(plugin: JavaPlugin, config: FileConfiguration, logger: L
     val eb = new EmbedBuilder
     eb.setColor(Color.YELLOW)
     eb.setTitle(s"$usr ${if (joined) "joined" else "left"} the game")
-    channel.sendMessage(eb.build()).queue()
+    channel.sendMessageEmbeds(eb.build()).queue()
+    val offset = if (joined) 1 else -1
+    updatePresence(Bukkit.getServer.getOnlinePlayers.size+offset)
   }
 
   def alertDeath(msg: String) : Unit = {
     val eb = new EmbedBuilder
     eb.setColor(Color.RED)
     eb.setTitle(msg)
-    channel.sendMessage(eb.build()).queue()
+    channel.sendMessageEmbeds(eb.build()).queue()
   }
 
-  def alertVCUpdate(user: Member, channel: VoiceChannel, joined: Boolean): Unit = {
+  def alertVCUpdate(user: Member, channel: AudioChannel, joined: Boolean): Unit = {
     Bukkit.broadcastMessage(s"${ChatColor.GRAY}${ChatColor.ITALIC}" +
       s"${user.getUser.getName} ${if (joined) "joined" else "left"} voice channel #${channel.getName}")
   }
 
   /* Discord Listener Events */
-  override def onGuildMessageReceived(event: GuildMessageReceivedEvent): Unit = {
-    val msg = event.getMessage
-    if (msg.getChannel.getId != CHANNEL_ID || msg.getAuthor.isBot) return
-    if (msg.getContentRaw.startsWith(prefix)) {
-      executeCommand(msg)
-      return
-    }
-    sendMessageToBukkit(msg)
-  }
 
+  override def onMessageReceived(event: MessageReceivedEvent): Unit = {
+    if (event.isFromGuild) {
+      val msg = event.getMessage
+      if (msg.getChannel.getId != CHANNEL_ID || msg.getAuthor.isBot) return
+      if (msg.getContentRaw.startsWith(prefix)) {
+        executeCommand(msg)
+      } else {
+        sendMessageToBukkit(msg)
+      }
+    }
+  }
 
   override def onGuildVoiceJoin(event: GuildVoiceJoinEvent): Unit = {
     alertVCUpdate(event.getMember, event.getChannelJoined, joined = true)
@@ -112,12 +115,22 @@ class DiscordConnection(plugin: JavaPlugin, config: FileConfiguration, logger: L
   def executeCommand(msg: Message): Unit = {
     val argsWithCommand: Array[String] = msg.getContentRaw.substring(prefix.length).split(" ")
     val parsed = argsWithCommand{0}
-    val cmdOption = CommandRegistry.getCmd(parsed)
+    val cmdOption = CommandRegistry.getCommand(parsed)
     cmdOption match {
       case Some(cmd) => cmd.run(LinkUserFactory.fromMember(msg.getMember),
         argsWithCommand.slice(1, argsWithCommand.length),
         new DiscordContext(msg.getMember, msg.getTextChannel, msg, config))
       case None => msg.getChannel.sendMessage(s"Command `$parsed` not found").queue()
+    }
+  }
+
+  def updatePresence(players: Int): Unit = {
+    try {
+      this.jda.getPresence.setActivity(Activity.playing(s"$players players online"))
+    } catch {
+      case e: Exception =>
+        logger.warning("Failed to change presence")
+        e.printStackTrace()
     }
   }
 

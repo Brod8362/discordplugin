@@ -40,7 +40,7 @@ object ChannelCommand extends Command {
     }
     for (msg <- result.left) {
       context.player.errorMessage(msg)
-      false
+      return false
     }
     true
   }

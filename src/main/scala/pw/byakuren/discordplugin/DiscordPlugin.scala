@@ -33,13 +33,13 @@ class DiscordPlugin extends JavaPlugin {
   }
 
   def loadConfig(): Unit = {
-    getConfig.addDefault("token", "token")
-    getConfig.addDefault("guild", "-1")
-    getConfig.addDefault("channel", "-1")
-    getConfig.addDefault("report-deaths", true)
-    getConfig.addDefault("report-connect", true)
-    getConfig.addDefault("report-disconnect", true)
-    getConfig.addDefault("bot-prefix", "!")
+//    getConfig.addDefault("token", "token")
+//    getConfig.addDefault("guild", "-1")
+//    getConfig.addDefault("channel", "-1")
+//    getConfig.addDefault("report-deaths", true)
+//    getConfig.addDefault("report-connect", true)
+//    getConfig.addDefault("report-disconnect", true):q!
+//    getConfig.addDefault("bot-prefix", "!")
 //    getConfig.options.copyDefaults(true)
   }
 
