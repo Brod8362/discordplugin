@@ -1,5 +1,6 @@
 package pw.byakuren.discordplugin
 
+import net.dv8tion.jda.api.entities.Message.MessageFlag
 import net.dv8tion.jda.api.entities._
 import net.dv8tion.jda.api.events.ReadyEvent
 import net.dv8tion.jda.api.events.guild.voice.{GuildVoiceJoinEvent, GuildVoiceLeaveEvent}
@@ -17,6 +18,7 @@ import pw.byakuren.discordplugin.contexts.DiscordContext
 import pw.byakuren.discordplugin.link.LinkUserFactory
 
 import java.awt.Color
+import java.util.function.Consumer
 import java.util.logging.Logger
 import javax.security.auth.login.LoginException
 import scala.jdk.CollectionConverters.CollectionHasAsScala
@@ -57,7 +59,11 @@ class DiscordConnection(plugin: JavaPlugin, config: FileConfiguration, logger: L
   }
 
   def sendMessageToBukkit(msg: Message) : Unit = {
-    sendMessageToBukkit(msg.getAuthor.getName, pingHighlight(msg), msg.getAttachments.size())
+    val extra = Option(msg.getMessageReference) match {
+      case Some(orig) => s"${ChatColor.ITALIC}${ChatColor.GRAY}-> ${orig.getMessage.getAuthor.getName}${ChatColor.RESET} "
+      case _ => ""
+    }
+    sendMessageToBukkit(msg.getAuthor.getName, extra+pingHighlight(msg), msg.getAttachments.size())
   }
 
   def alertUserConnectionChange(usr: String, joined: Boolean) : Unit = {
@@ -153,8 +159,18 @@ class DiscordConnection(plugin: JavaPlugin, config: FileConfiguration, logger: L
     var content = event.getMessage
     val matches = regex.findAllIn(content)
     for (found <- matches) {
-      for (id <- found.substring(2, found.length-1).toLongOption; user <- Option(jda.getUserById(id))) {
-          content = content.replaceAll(found, s"${ChatColor.BLUE}@${user.getName}${ChatColor.RESET}")
+      val idOpt = found.substring(2, found.length-1).toLongOption
+      idOpt match {
+        case Some(id)  =>
+          try {
+            val user = jda.retrieveUserById(id).complete()
+            content = content.replaceAll(found, s"${ChatColor.BLUE}@${user.getName}${ChatColor.RESET}")
+          } catch {
+            case _: Throwable =>
+              content = content.replaceAll(found, s"${ChatColor.RED}@unknown user${ChatColor.RESET}")
+          }
+        case _ =>
+          content = content.replaceAll(found, s"${ChatColor.RED}@invalid${ChatColor.RESET}")
       }
     }
     event.setMessage(content)
