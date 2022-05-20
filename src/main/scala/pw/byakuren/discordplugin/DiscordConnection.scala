@@ -16,6 +16,7 @@ import org.bukkit.{Bukkit, ChatColor}
 import pw.byakuren.discordplugin.commands.{ChannelCommand, LinkCommand, TestCommand}
 import pw.byakuren.discordplugin.contexts.DiscordContext
 import pw.byakuren.discordplugin.link.LinkUserFactory
+import pw.byakuren.discordplugin.util.Utility.StringMethods
 
 import java.awt.Color
 import java.util.function.Consumer
@@ -51,19 +52,31 @@ class DiscordConnection(plugin: JavaPlugin, config: FileConfiguration, logger: L
         channel.sendMessage(str).queue()
   }
 
-  def sendMessageToBukkit(name: String, msg: String, img_count: Int) : Unit = {
+  def sendMessageToBukkit(name: String, msg: String, img_count: Int, replyContent: Option[String] = None) : Unit = {
     if (enabled) {
       val img_str = if (img_count > 0) s"${ChatColor.DARK_PURPLE}[File${if (img_count==1) "" else s"×$img_count"}] ${ChatColor.RESET}" else ""
-      Bukkit.broadcastMessage(s"{$name} $img_str$msg")
+      replyContent match {
+        case Some(rc) =>
+          val top =  s"${ChatColor.GRAY}╔⇒ ${ChatColor.ITALIC}$rc${ChatColor.RESET}\n"
+          val main = s"${ChatColor.GRAY}╚ ${ChatColor.RESET}{$name} $img_str$msg"
+          Bukkit.broadcastMessage(top+main)
+        case _ =>
+          Bukkit.broadcastMessage(s"{$name} $img_str$msg")
+      }
+
     }
   }
 
   def sendMessageToBukkit(msg: Message) : Unit = {
-    val extra = Option(msg.getMessageReference) match {
-      case Some(orig) => s"${ChatColor.ITALIC}${ChatColor.GRAY}-> ${orig.getMessage.getAuthor.getName}${ChatColor.RESET} "
-      case _ => ""
+    val mainContent = pingHighlight(msg)
+    Option(msg.getMessageReference) match {
+      case Some(orig) =>
+        val rc = s"${orig.getMessage.getAuthor.getName}: ${orig.getMessage.getContentDisplay.truncate(30)}"
+        sendMessageToBukkit(msg.getAuthor.getName, mainContent, msg.getAttachments.size(), Some(rc))
+      case _ =>
+        sendMessageToBukkit(msg.getAuthor.getName, mainContent, msg.getAttachments.size())
     }
-    sendMessageToBukkit(msg.getAuthor.getName, extra+pingHighlight(msg), msg.getAttachments.size())
+
   }
 
   def alertUserConnectionChange(usr: String, joined: Boolean) : Unit = {

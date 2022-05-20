@@ -14,4 +14,14 @@ object Utility {
     }
   }
 
+  implicit class StringMethods(x: String) {
+    def truncate(len: Int): String = {
+      if (x.length < len) {
+        x
+      } else {
+        x.take(len-3)+"..."
+      }
+    }
+  }
+
 }
