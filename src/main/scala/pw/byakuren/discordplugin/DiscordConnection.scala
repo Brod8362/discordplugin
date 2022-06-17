@@ -1,6 +1,5 @@
 package pw.byakuren.discordplugin
 
-import net.dv8tion.jda.api.entities.Message.MessageFlag
 import net.dv8tion.jda.api.entities._
 import net.dv8tion.jda.api.events.ReadyEvent
 import net.dv8tion.jda.api.events.guild.voice.{GuildVoiceJoinEvent, GuildVoiceLeaveEvent}
@@ -10,7 +9,7 @@ import net.dv8tion.jda.api.{EmbedBuilder, JDA, JDABuilder}
 import org.bukkit.configuration.file.FileConfiguration
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.player.{AsyncPlayerChatEvent, PlayerLoginEvent, PlayerQuitEvent}
-import org.bukkit.event.{EventHandler, Listener}
+import org.bukkit.event.{EventHandler, EventPriority, Listener}
 import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.{Bukkit, ChatColor}
 import pw.byakuren.discordplugin.commands.{ChannelCommand, LinkCommand, TestCommand}
@@ -19,7 +18,6 @@ import pw.byakuren.discordplugin.link.LinkUserFactory
 import pw.byakuren.discordplugin.util.Utility.StringMethods
 
 import java.awt.Color
-import java.util.function.Consumer
 import java.util.logging.Logger
 import javax.security.auth.login.LoginException
 import scala.jdk.CollectionConverters.CollectionHasAsScala
@@ -155,12 +153,12 @@ class DiscordConnection(plugin: JavaPlugin, config: FileConfiguration, logger: L
 
   /* Bukkit Listener Events */
 
-  @EventHandler
+  @EventHandler(priority = EventPriority.MONITOR)
   def onLogin(event: PlayerLoginEvent): Unit = {
     alertUserConnectionChange(event.getPlayer.getName, joined = true)
   }
 
-  @EventHandler
+  @EventHandler(priority = EventPriority.MONITOR)
   def onLogout(event: PlayerQuitEvent): Unit = {
     alertUserConnectionChange(event.getPlayer.getName, joined = false)
   }
