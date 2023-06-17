@@ -2,14 +2,5 @@ name: DiscordPlugin
 main: pw.byakuren.discordplugin.DiscordPlugin
 description: "Connect a discord channel to your minecraft server!"
 author: "Brod8362"
-version: "1.2"
+version: "1.3"
 api-version: 1.16
-commands:
-  test:
-    description: "Testing command"
-
-  link:
-    description: "Used to link your minecraft account and your discord account."
-
-  channel:
-    description: "Used to choose the channel the bot is paired with. Requires restart."

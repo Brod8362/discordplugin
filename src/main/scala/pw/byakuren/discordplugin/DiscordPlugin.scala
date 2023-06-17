@@ -5,7 +5,6 @@ import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import org.bukkit.plugin.java.JavaPlugin
 import pw.byakuren.discordplugin.contexts.BukkitContext
-import pw.byakuren.discordplugin.link.LinkUserFactory
 
 class DiscordPlugin extends JavaPlugin {
 
@@ -48,7 +47,7 @@ class DiscordPlugin extends JavaPlugin {
     sender match {
       case player:Player =>
         for (command <- commandOption) {
-          command.run(LinkUserFactory.fromUUID(player.getUniqueId), args, new BukkitContext(player, getConfig))
+          command.run(args, new BukkitContext(player, getConfig))
         }
     }
     super.onCommand(sender, cmd, label, args)

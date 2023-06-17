@@ -12,9 +12,6 @@ import org.bukkit.event.player.{AsyncPlayerChatEvent, PlayerLoginEvent, PlayerQu
 import org.bukkit.event.{EventHandler, EventPriority, Listener}
 import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.{Bukkit, ChatColor}
-import pw.byakuren.discordplugin.commands.{ChannelCommand, LinkCommand, TestCommand}
-import pw.byakuren.discordplugin.contexts.DiscordContext
-import pw.byakuren.discordplugin.link.LinkUserFactory
 import pw.byakuren.discordplugin.util.Utility.StringMethods
 
 import java.awt.Color
@@ -28,13 +25,13 @@ class DiscordConnection(plugin: JavaPlugin, config: FileConfiguration, logger: L
 
   val jda: JDA = init()
 
-  val CHANNEL_ID:String = config.getString("channel")
-  val prefix:String = config.getString("bot-prefix")
+  val CHANNEL_ID: String = config.getString("channel")
+  val prefix: String = config.getString("bot-prefix")
   jda.awaitReady()
-  val SELF_USER_ID:Long = jda.getSelfUser.getIdLong
-  var channel:TextChannel = jda.getTextChannelById(CHANNEL_ID)
+  val SELF_USER_ID: Long = jda.getSelfUser.getIdLong
+  var channel: TextChannel = jda.getTextChannelById(CHANNEL_ID)
 
-  def init() : JDA = {
+  def init(): JDA = {
     try {
       Bukkit.getServer.getPluginManager.registerEvents(this, plugin)
       JDABuilder.createDefault(config.getString("token")).addEventListeners(this).build()
@@ -45,19 +42,19 @@ class DiscordConnection(plugin: JavaPlugin, config: FileConfiguration, logger: L
     }
   }
 
-  def sendMessageToDiscord(str: String) : Unit = {
+  def sendMessageToDiscord(str: String): Unit = {
     if (enabled)
-        channel.sendMessage(str).queue()
+      channel.sendMessage(str).queue()
   }
 
-  def sendMessageToBukkit(name: String, msg: String, img_count: Int, replyContent: Option[String] = None) : Unit = {
+  def sendMessageToBukkit(name: String, msg: String, img_count: Int, replyContent: Option[String] = None): Unit = {
     if (enabled) {
-      val img_str = if (img_count > 0) s"${ChatColor.DARK_PURPLE}[File${if (img_count==1) "" else s"×$img_count"}] ${ChatColor.RESET}" else ""
+      val img_str = if (img_count > 0) s"${ChatColor.DARK_PURPLE}[File${if (img_count == 1) "" else s"×$img_count"}] ${ChatColor.RESET}" else ""
       replyContent match {
         case Some(rc) =>
-          val top =  s"${ChatColor.GRAY}╔⇒ ${ChatColor.ITALIC}$rc${ChatColor.RESET}\n"
+          val top = s"${ChatColor.GRAY}╔⇒ ${ChatColor.ITALIC}$rc${ChatColor.RESET}\n"
           val main = s"${ChatColor.GRAY}╚ ${ChatColor.RESET}{$name} $img_str$msg"
-          Bukkit.broadcastMessage(top+main)
+          Bukkit.broadcastMessage(top + main)
         case _ =>
           Bukkit.broadcastMessage(s"{$name} $img_str$msg")
       }
@@ -65,7 +62,7 @@ class DiscordConnection(plugin: JavaPlugin, config: FileConfiguration, logger: L
     }
   }
 
-  def sendMessageToBukkit(msg: Message) : Unit = {
+  def sendMessageToBukkit(msg: Message): Unit = {
     val mainContent = pingHighlight(msg)
     Option(msg.getMessageReference) match {
       case Some(orig) =>
@@ -77,16 +74,16 @@ class DiscordConnection(plugin: JavaPlugin, config: FileConfiguration, logger: L
 
   }
 
-  def alertUserConnectionChange(usr: String, joined: Boolean) : Unit = {
+  def alertUserConnectionChange(usr: String, joined: Boolean): Unit = {
     val eb = new EmbedBuilder
     eb.setColor(Color.YELLOW)
     eb.setTitle(s"$usr ${if (joined) "joined" else "left"} the game")
     channel.sendMessageEmbeds(eb.build()).queue()
     val offset = if (joined) 1 else -1
-    updatePresence(Bukkit.getServer.getOnlinePlayers.size+offset)
+    updatePresence(Bukkit.getServer.getOnlinePlayers.size + offset)
   }
 
-  def alertDeath(msg: String) : Unit = {
+  def alertDeath(msg: String): Unit = {
     val eb = new EmbedBuilder
     eb.setColor(Color.RED)
     eb.setTitle(msg)
@@ -104,11 +101,7 @@ class DiscordConnection(plugin: JavaPlugin, config: FileConfiguration, logger: L
     if (event.isFromGuild) {
       val msg = event.getMessage
       if (msg.getChannel.getId != CHANNEL_ID || msg.getAuthor.isBot) return
-      if (msg.getContentRaw.startsWith(prefix)) {
-        executeCommand(msg)
-      } else {
-        sendMessageToBukkit(msg)
-      }
+      sendMessageToBukkit(msg)
     }
   }
 
@@ -121,25 +114,10 @@ class DiscordConnection(plugin: JavaPlugin, config: FileConfiguration, logger: L
   }
 
   override def onReady(event: ReadyEvent): Unit = {
-    CommandRegistry register TestCommand
-    CommandRegistry register LinkCommand
-    CommandRegistry register ChannelCommand
     logger.info(s"Loaded ${CommandRegistry.size} commands.")
   }
 
   /* Discord-Specific Events */
-
-  def executeCommand(msg: Message): Unit = {
-    val argsWithCommand: Array[String] = msg.getContentRaw.substring(prefix.length).split(" ")
-    val parsed = argsWithCommand{0}
-    val cmdOption = CommandRegistry.getCommand(parsed)
-    cmdOption match {
-      case Some(cmd) => cmd.run(LinkUserFactory.fromMember(msg.getMember),
-        argsWithCommand.slice(1, argsWithCommand.length),
-        new DiscordContext(msg.getMember, msg.getTextChannel, msg, config))
-      case None => msg.getChannel.sendMessage(s"Command `$parsed` not found").queue()
-    }
-  }
 
   def updatePresence(players: Int): Unit = {
     try {
@@ -155,7 +133,9 @@ class DiscordConnection(plugin: JavaPlugin, config: FileConfiguration, logger: L
 
   @EventHandler(priority = EventPriority.MONITOR)
   def onLogin(event: PlayerLoginEvent): Unit = {
-    alertUserConnectionChange(event.getPlayer.getName, joined = true)
+    if (event.getResult == PlayerLoginEvent.Result.ALLOWED) {
+      alertUserConnectionChange(event.getPlayer.getName, joined = true)
+    }
   }
 
   @EventHandler(priority = EventPriority.MONITOR)
@@ -170,9 +150,9 @@ class DiscordConnection(plugin: JavaPlugin, config: FileConfiguration, logger: L
     var content = event.getMessage
     val matches = regex.findAllIn(content)
     for (found <- matches) {
-      val idOpt = found.substring(2, found.length-1).toLongOption
+      val idOpt = found.substring(2, found.length - 1).toLongOption
       idOpt match {
-        case Some(id)  =>
+        case Some(id) =>
           try {
             val user = jda.retrieveUserById(id).complete()
             content = content.replaceAll(found, s"${ChatColor.BLUE}@${user.getName}${ChatColor.RESET}")
@@ -194,6 +174,7 @@ class DiscordConnection(plugin: JavaPlugin, config: FileConfiguration, logger: L
 
   /* Plugin handling methods */
   def enable(): Unit = enabled = true
+
   def disable(): Unit = enabled = false
 
   def shutdown(): Unit = jda.shutdownNow()
