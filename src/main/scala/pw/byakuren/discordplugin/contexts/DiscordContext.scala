@@ -1,6 +1,7 @@
 package pw.byakuren.discordplugin.contexts
 
-import net.dv8tion.jda.api.entities.{Member, Message, TextChannel}
+import net.dv8tion.jda.api.entities.{Member, Message}
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
 import org.bukkit.configuration.file.FileConfiguration
 
 

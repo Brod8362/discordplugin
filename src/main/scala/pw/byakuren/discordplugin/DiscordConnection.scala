@@ -1,9 +1,11 @@
 package pw.byakuren.discordplugin
 
 import net.dv8tion.jda.api.entities._
-import net.dv8tion.jda.api.events.ReadyEvent
-import net.dv8tion.jda.api.events.guild.voice.{GuildVoiceJoinEvent, GuildVoiceLeaveEvent}
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
+import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel
+import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
+import net.dv8tion.jda.api.events.session.ReadyEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
 import net.dv8tion.jda.api.{EmbedBuilder, JDA, JDABuilder}
 import org.bukkit.configuration.file.FileConfiguration
@@ -90,9 +92,23 @@ class DiscordConnection(plugin: JavaPlugin, config: FileConfiguration, logger: L
     channel.sendMessageEmbeds(eb.build()).queue()
   }
 
-  def alertVCUpdate(user: Member, channel: AudioChannel, joined: Boolean): Unit = {
-    Bukkit.broadcastMessage(s"${ChatColor.GRAY}${ChatColor.ITALIC}" +
-      s"${user.getUser.getName} ${if (joined) "joined" else "left"} voice channel #${channel.getName}")
+  def alertVCUpdate(user: Member, from: Option[AudioChannel], to: Option[AudioChannel]): Unit = {
+    val messagePrefix = s"${ChatColor.GRAY}${ChatColor.ITALIC}"
+    if (from.isDefined && to.isDefined) {
+        Bukkit.broadcastMessage(messagePrefix +
+        s"${user.getUser.getName} moved from ${ChatColor.RESET}🔊 ${from.get.getName}${ChatColor.GRAY}${ChatColor.ITALIC} to ${ChatColor.RESET}🔊 ${to.get.getName}")
+    } else {
+      val joined = to.isDefined
+      val channelName = if (joined) {
+        to.get.getName
+      } else {
+        from.get.getName
+      }
+      Bukkit.broadcastMessage(messagePrefix +
+        s"${user.getUser.getName} ${if (joined) "joined" else "left"} voice channel ${ChatColor.RESET}🔊 $channelName"
+      )
+    }
+
   }
 
   /* Discord Listener Events */
@@ -105,12 +121,10 @@ class DiscordConnection(plugin: JavaPlugin, config: FileConfiguration, logger: L
     }
   }
 
-  override def onGuildVoiceJoin(event: GuildVoiceJoinEvent): Unit = {
-    alertVCUpdate(event.getMember, event.getChannelJoined, joined = true)
-  }
 
-  override def onGuildVoiceLeave(event: GuildVoiceLeaveEvent): Unit = {
-    alertVCUpdate(event.getMember, event.getChannelLeft, joined = false)
+  override def onGuildVoiceUpdate(event: GuildVoiceUpdateEvent): Unit = {
+
+    alertVCUpdate(event.getMember, Option(event.getChannelLeft), Option(event.getChannelJoined))
   }
 
   override def onReady(event: ReadyEvent): Unit = {
@@ -186,7 +200,7 @@ class DiscordConnection(plugin: JavaPlugin, config: FileConfiguration, logger: L
   /* Utility methods */
   def pingHighlight(m: Message): String = {
     var f = m.getContentDisplay
-    for (u <- m.getMentionedMembers.asScala) {
+    for (u <- m.getMentions.getMembers.asScala) {
       println("x")
       f = f.replace(s"@${u.getEffectiveName}",
         s"${ChatColor.BLUE}@${u.getUser.getName}${ChatColor.RESET}")
