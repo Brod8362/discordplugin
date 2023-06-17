@@ -172,10 +172,10 @@ class DiscordConnection(plugin: JavaPlugin, config: FileConfiguration, logger: L
       logger.info(s"Regex match $found")
       val username = found.substring(1)
       //try to find a user with that username
-      jda.getUsersByName(username, true).asScala.headOption match {
+      channel.getGuild.getMembersByName(username, true).asScala.headOption match {
         case Some(user) =>
           discordContent = discordContent.replaceAll(found, s"<@${user.getId}>")
-          minecraftContent = minecraftContent.replaceAll(found, s"${ChatColor.BLUE}@${user.getName}${ChatColor.RESET}")
+          minecraftContent = minecraftContent.replaceAll(found, s"${ChatColor.BLUE}@${user.getUser.getName}${ChatColor.RESET}")
         case None =>
           minecraftContent = minecraftContent.replaceAll(found, s"${ChatColor.RED}@?$username${ChatColor.RESET}")
       }
