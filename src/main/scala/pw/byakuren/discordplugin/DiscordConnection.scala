@@ -145,26 +145,30 @@ class DiscordConnection(plugin: JavaPlugin, config: FileConfiguration, logger: L
 
   @EventHandler
   def onMessage(event: AsyncPlayerChatEvent): Unit = {
-    sendMessageToDiscord(s"<${event.getPlayer.getName}> ${event.getMessage}")
-    val regex = "<@\\d{17,18}>".r
-    var content = event.getMessage
-    val matches = regex.findAllIn(content)
+    // try to substitute pings when sending to discord
+    var discordContent = event.getMessage
+    var minecraftContent = event.getMessage
+
+    // find new-style usernames
+    val matches = "@[a-z._0-9]{2,32}".r.findAllIn(minecraftContent)
+    // do not uncomment this: checking the size of the iterator consumes the entries
+    // logger.info(s"Found ${matches.size} regex matches")
+
     for (found <- matches) {
-      val idOpt = found.substring(2, found.length - 1).toLongOption
-      idOpt match {
-        case Some(id) =>
-          try {
-            val user = jda.retrieveUserById(id).complete()
-            content = content.replaceAll(found, s"${ChatColor.BLUE}@${user.getName}${ChatColor.RESET}")
-          } catch {
-            case _: Throwable =>
-              content = content.replaceAll(found, s"${ChatColor.RED}@unknown user${ChatColor.RESET}")
-          }
-        case _ =>
-          content = content.replaceAll(found, s"${ChatColor.RED}@invalid${ChatColor.RESET}")
+      logger.info(s"Regex match $found")
+      val username = found.substring(1)
+      //try to find a user with that username
+      jda.getUsersByName(username, true).asScala.headOption match {
+        case Some(user) =>
+          discordContent = discordContent.replaceAll(found, s"<@${user.getId}>")
+          minecraftContent = minecraftContent.replaceAll(found, s"${ChatColor.BLUE}@${user.getName}${ChatColor.RESET}")
+        case None =>
+          minecraftContent = minecraftContent.replaceAll(found, s"${ChatColor.RED}@?$username${ChatColor.RESET}")
       }
     }
-    event.setMessage(content)
+
+    sendMessageToDiscord(s"<${event.getPlayer.getName}> $discordContent")
+    event.setMessage(minecraftContent)
   }
 
   @EventHandler
