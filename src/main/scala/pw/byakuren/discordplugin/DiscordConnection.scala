@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import net.dv8tion.jda.api.events.session.ReadyEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
+import net.dv8tion.jda.api.requests.GatewayIntent
 import net.dv8tion.jda.api.{EmbedBuilder, JDA, JDABuilder}
 import org.bukkit.configuration.file.FileConfiguration
 import org.bukkit.event.entity.PlayerDeathEvent
@@ -36,7 +37,10 @@ class DiscordConnection(plugin: JavaPlugin, config: FileConfiguration, logger: L
   def init(): JDA = {
     try {
       Bukkit.getServer.getPluginManager.registerEvents(this, plugin)
-      JDABuilder.createDefault(config.getString("token")).addEventListeners(this).build()
+      JDABuilder
+        .createDefault(config.getString("token"))
+        .enableIntents(GatewayIntent.MESSAGE_CONTENT, GatewayIntent.GUILD_MEMBERS)
+        .addEventListeners(this).build()
     } catch {
       case _: LoginException =>
         logger.warning("Failed to load discord - Invalid bot token")
